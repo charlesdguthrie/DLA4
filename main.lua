@@ -120,7 +120,7 @@ local function grucell(x, prev_c, prev_h)
     return next_c, next_h
 end
 
-function create_network() --TODO: add a parameter that allows you to swap out lstm with gru
+function create_network() 
     -- creates single unit of network
     local x                  = nn.Identity()() -- current word
     local y                  = nn.Identity()() -- actual next word
