@@ -42,8 +42,8 @@ local params = {
                 max_epoch=4,  -- when to start decaying learning rate (default 4)
                 max_max_epoch=13, -- final epoch (default 13)
                 max_grad_norm=5, -- clip when gradients exceed this norm value.  TODO: modify for gradient clipping
-                model_path = 'model.net',
-                best_model_path = 'best_model.net',
+                model_path = 'models/model.net',
+                best_model_path = 'models/best_model.net',
                 vocab_map_path = 'vocab_map.tab',
                 save_freq = 1, --save model every n epochs
                 patience = 3,
@@ -88,7 +88,7 @@ local function lstm(x, prev_c, prev_h)
     return next_c, next_h
 end
 
-local function grucell(x, prev_c, prev_h)
+local function gru(x, prev_c, prev_h)
     -- this will be Wr, Wu, Whtilda
     local i2h   = nn.Linear(params.rnn_size, 3*params.rnn_size)(x)
     -- Ur, Uu, Uhtilda
@@ -120,7 +120,12 @@ local function grucell(x, prev_c, prev_h)
     return next_c, next_h
 end
 
-function create_network() 
+function create_network()
+    local rnn = {
+        lstm=lstm,
+        gru=gru
+    }
+
     -- creates single unit of network
     local x                  = nn.Identity()() -- current word
     local y                  = nn.Identity()() -- actual next word
@@ -136,11 +141,14 @@ function create_network()
         local dropped        = nn.Dropout(params.dropout)(i[layer_idx - 1]) --implement dropout
 
         --select lstm or gru
+        --[[
         if params.rnn_type == 'lstm' then
             local next_c, next_h = lstm(dropped, prev_c, prev_h)
         elseif params.rnn_type == 'gru' then
             local next_c, next_h = grucell(dropped, prev_c, prev_h)
         end
+        --]]
+        local next_c, next_h = rnn[params.rnn_type](dropped, prev_c, prev_h)
         table.insert(next_s, next_c)
         table.insert(next_s, next_h)
         i[layer_idx] = next_h
@@ -158,7 +166,7 @@ end
 
 function setup()
     -- builds RNN network with initial states
-    print("Creating a RNN LSTM network.")
+    print("Creating a RNN ".. params.rnn_type .." network.")
     local core_network = create_network()
     paramx, paramdx = core_network:getParameters()
     model.s = {} -- state at time step
