@@ -42,13 +42,17 @@ local params = {
                 max_epoch=4,  -- when to start decaying learning rate (default 4)
                 max_max_epoch=13, -- final epoch (default 13)
                 max_grad_norm=5, -- clip when gradients exceed this norm value.  TODO: modify for gradient clipping
-                model_path = 'models/model.net',
-                best_model_path = 'models/best_model.net',
+                model_name = 'models/model.net',
                 vocab_map_path = 'vocab_map.tab',
                 save_freq = 1, --save model every n epochs
                 patience = 3,
                 rnn_type = 'lstm' -- 'lstm' or 'gru'
                }
+
+model_path = "models/"..params.model_name..".net"
+best_model_path = "models/best_"..params.model_name..".net"
+params_path = "models/params_"..params.model_name..".net"
+torch.save(params_path,params)
 
 function transfer_data(x)
     -- not used. We are not using GPUs.
@@ -282,8 +286,8 @@ function run_valid()
 
     -- save current model every n epochs
     if epoch % params.save_freq == 0 then
-        print('saving model to '..params.model_path)
-        torch.save(params.model_path,model)
+        print('saving model to '..model_path)
+        torch.save(model_path,model)
     end
 
     -- save best model if current perp is better than best perp
@@ -291,8 +295,8 @@ function run_valid()
         if valid_perp < best_valid_perp then
             best_valid_perp = valid_perp
             wait = 0
-            print('saving best model to '..params.best_model_path)
-            torch.save(params.best_model_path,model)
+            print('saving best model to '..best_model_path)
+            torch.save(best_model_path,model)
         else -- otherwise wait.  Once wait > patience, give up.
             wait = wait + 1
         end
