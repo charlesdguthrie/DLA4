@@ -42,7 +42,7 @@ local params = {
                 max_epoch=4,  -- when to start decaying learning rate (default 4)
                 max_max_epoch=13, -- final epoch (default 13)
                 max_grad_norm=5, -- clip when gradients exceed this norm value.  TODO: modify for gradient clipping
-                model_name = 'models/model.net',
+                model_name = 'model_20160424',
                 vocab_map_path = 'vocab_map.tab',
                 save_freq = 1, --save model every n epochs
                 patience = 3,
@@ -52,6 +52,7 @@ local params = {
 model_path = "models/"..params.model_name..".net"
 best_model_path = "models/best_"..params.model_name..".net"
 params_path = "models/params_"..params.model_name..".net"
+print("saving params to "..params_path)
 torch.save(params_path,params)
 
 function transfer_data(x)
