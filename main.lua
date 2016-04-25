@@ -6,13 +6,6 @@
 ----  LICENSE file in the root directory of this source tree. 
 ----
 
--- TODOS:
--- save model to disk
--- write inverse dictionary
--- rewrite communication loop call run_test() on saved model. 
--- run_test() will return pred, among other things
--- communication loop will run pred through inverse dictionary to produce predicted word.
-
 
 gpu = false
 if gpu then
@@ -52,6 +45,7 @@ local params = {
 model_path = "models/"..params.model_name..".net"
 best_model_path = "models/best_"..params.model_name..".net"
 params_path = "models/params_"..params.model_name..".net"
+results_path = "models/results.txt"
 print("saving params to "..params_path)
 torch.save(params_path,params)
 
@@ -163,7 +157,7 @@ function create_network()
     local pred               = nn.LogSoftMax()(h2y(dropped))
     local err                = nn.ClassNLLCriterion()({pred, y})
     local module             = nn.gModule({x, y, prev_s},
-                                      {err, nn.Identity()(next_s), pred}) --TODO: output a third thing: pred.  It won't break Lua to output 3 things when it asks for 2. NOTE: I already did it.  if it breaks, the error is here.  NOTE2: this returns log(pred) but ranking is the same.
+                                      {err, nn.Identity()(next_s), pred}) 
     -- initialize weights
     module:getParameters():uniform(-params.init_weight, params.init_weight)
     return transfer_data(module)
@@ -248,7 +242,7 @@ function bp(state)
         -- Why 1?
         -- backward pass requires a value for dpred, like derr
         local derr = transfer_data(torch.ones(1))
-        local dpred = transfer_data(torch.zeros(params.batch_size,params.vocab_size)) --TODO: should it be batch_size?
+        local dpred = transfer_data(torch.zeros(params.batch_size,params.vocab_size))
         -- tmp stores the ds
         local tmp = model.rnns[i]:backward({x, y, s},
                                            {derr, model.ds, dpred})[3]
@@ -268,6 +262,14 @@ function bp(state)
     
     -- gradient descent step
     paramx:add(paramdx:mul(-params.lr))
+end
+
+function record_results(epoch,perp)
+    local file = io.open(results_path, "a+")
+
+    -- appends a word test to the last line of the file
+    file:write("\n".. params.model_name .. "\t valid \t" .. torch.floor(epoch) .. "\t " .. perp)
+    file:close()
 end
 
 function run_valid()
@@ -298,6 +300,9 @@ function run_valid()
             wait = 0
             print('saving best model to '..best_model_path)
             torch.save(best_model_path,model)
+            print('saving best model validation perplexity to '..perp_path)
+            record_results(epoch,g_f3(best_valid_perp))
+
         else -- otherwise wait.  Once wait > patience, give up.
             wait = wait + 1
         end
@@ -389,7 +394,6 @@ while epoch < params.max_max_epoch do
              ', lr = ' ..  g_f3(params.lr) ..
              ', since beginning = ' .. since_beginning .. ' mins.')
     end
-    -- TODO: save model periodically.
     -- run when epoch done
     if step % epoch_size == 0 then
         run_valid()
