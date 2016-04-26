@@ -7,6 +7,8 @@
 ----
 
 
+--NOTE: REQUIRES PARAMS, LOCATED IN loop.lua.  Run from loop.lua
+
 gpu = false
 if gpu then
     require 'cunn'
@@ -22,29 +24,11 @@ require('base')
 ptb = require('data')
 
 -- Trains 1 epoch and gives validation set ~182 perplexity (CPU).
-local params = {
-                batch_size=20, -- minibatch
-                seq_length=20, -- unroll length: number of blocks
-                layers=2, -- how many LSTM stacks
-                decay=2,
-                rnn_size=200, -- hidden unit size.  Size of vector input
-                dropout=0, 
-                init_weight=0.1, -- random weight initialization limits
-                lr=1, --learning rate
-                vocab_size=10000, -- limit on the vocabulary size
-                max_epoch=4,  -- when to start decaying learning rate (default 4)
-                max_max_epoch=13, -- final epoch (default 13)
-                max_grad_norm=5, -- clip when gradients exceed this norm value.  TODO: modify for gradient clipping
-                model_name = 'model_20160424',
-                vocab_map_path = 'vocab_map.tab',
-                save_freq = 1, --save model every n epochs
-                patience = 3,
-                rnn_type = 'lstm' -- 'lstm' or 'gru'
-               }
+
 
 model_path = "models/"..params.model_name..".net"
 best_model_path = "models/best_"..params.model_name..".net"
-params_path = "models/params_"..params.model_name..".net"
+params_path = "models/params_"..params.model_name..".lua"
 results_path = "models/results.txt"
 print("saving params to "..params_path)
 torch.save(params_path,params)
@@ -369,7 +353,7 @@ epoch_size = torch.floor(state_train.data:size(1) / params.seq_length)
 while epoch < params.max_max_epoch do
 
     -- take one step forward
-    perp = fp(state_train)
+    local perp = fp(state_train)
     if perps == nil then
         perps = torch.zeros(epoch_size):add(perp)
     end
@@ -407,6 +391,8 @@ while epoch < params.max_max_epoch do
         print("early stop. " .. torch.floor(epoch) .. " epochs")
         break
     end
+    collectgarbage()
+    collectgarbage()
 end
 run_test()
 print("Training is over.")
