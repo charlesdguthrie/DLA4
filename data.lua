@@ -12,9 +12,15 @@ local file = require('pl.file')
 local ptb_path = "./data/"
 
 -- define file names
-local trainfn = ptb_path .. "ptb.train.txt"
-local testfn  = ptb_path .. "ptb.test.txt"
-local validfn = ptb_path .. "ptb.valid.txt"
+if params.debug == true then
+    trainfn = ptb_path .. "ptb.train_head.txt"
+    testfn  = ptb_path .. "ptb.test_head.txt"
+    validfn = ptb_path .. "ptb.valid_head.txt"
+else
+    trainfn = ptb_path .. "ptb.train.txt"
+    testfn  = ptb_path .. "ptb.test.txt"
+    validfn = ptb_path .. "ptb.valid.txt"
+end
 
 local vocab_idx = 0
 local vocab_map = {}

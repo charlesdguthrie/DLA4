@@ -284,7 +284,7 @@ function run_valid()
             wait = 0
             print('saving best model to '..best_model_path)
             torch.save(best_model_path,model)
-            print('saving best model validation perplexity to '..perp_path)
+            print('saving best model validation perplexity to '..results_path)
             record_results(epoch,g_f3(best_valid_perp))
 
         else -- otherwise wait.  Once wait > patience, give up.
