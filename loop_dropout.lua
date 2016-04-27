@@ -9,7 +9,7 @@ Checklist:
 
 
 -- list of parameters over which to loop
-var_list = {0,0.1,0.5}
+var_list = {0.1,0.5}
 
 for i,var in ipairs(var_list) do
 

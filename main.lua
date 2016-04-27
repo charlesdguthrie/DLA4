@@ -248,11 +248,15 @@ function bp(state)
     paramx:add(paramdx:mul(-params.lr))
 end
 
-function record_results(epoch,perp)
+function record_results(dataset,epoch,perp)
+    -- dataset: "valid" or "test"
+    -- epoch: epoch number
+    -- perp: perplexity
+    print('saving '..dataset..' perplexity to '..results_path)
     local file = io.open(results_path, "a+")
 
     -- appends a word test to the last line of the file
-    file:write("\n".. params.model_name .. "\t valid \t" .. torch.floor(epoch) .. "\t " .. perp)
+    file:write("\n".. params.model_name .. "\t" .. dataset .. "\t" .. torch.floor(epoch) .. "\t " .. perp)
     file:close()
 end
 
@@ -284,8 +288,6 @@ function run_valid()
             wait = 0
             print('saving best model to '..best_model_path)
             torch.save(best_model_path,model)
-            print('saving best model validation perplexity to '..results_path)
-            record_results(epoch,g_f3(best_valid_perp))
 
         else -- otherwise wait.  Once wait > patience, give up.
             wait = wait + 1
@@ -294,6 +296,7 @@ function run_valid()
     end
 
     print("Validation set perplexity : " .. g_f3(valid_perp))
+    record_results('valid',epoch,g_f3(valid_perp))
     g_enable_dropout(model.rnns)
 end
 
@@ -314,7 +317,9 @@ function run_test()
         perp = perp + perp_tmp[1]
         g_replace_table(model.s[0], model.s[1])
     end
-    print("Test set perplexity : " .. g_f3(torch.exp(perp / (len - 1))))
+    local test_perp = g_f3(torch.exp(perp / (len - 1)))
+    print("Test set perplexity : " .. test_perp)
+    record_results('test',0,test_perp)
     g_enable_dropout(model.rnns)
 end
 
@@ -344,6 +349,7 @@ step = 0
 epoch = 0
 total_cases = 0
 wait = 0
+best_valid_perp = nil
 beginning_time = torch.tic()
 start_time = torch.tic()
 print("Starting training.")
